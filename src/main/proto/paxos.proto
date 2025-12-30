@@ -1,0 +1,155 @@
+syntax = "proto3";
+
+package com.distributedsystems.paxos.proto;
+option java_multiple_files = false;
+option java_outer_classname = "Paxos";
+
+
+service PaxosService {
+  rpc Prepare   (PrepareRequest)  returns (PromiseReply);
+  rpc Accept    (AcceptRequest)   returns (AcceptedReply);
+  rpc Commit    (CommitRequest)   returns (CommitReply);
+  rpc Heartbeat (HeartbeatRequest) returns (HeartbeatReply);
+  rpc NewView   (NewViewRequest)  returns (NewViewReply);
+  rpc Sync      (SyncRequest)     returns (SyncReply);
+  rpc GetAcceptLog (AcceptLogRequest) returns (AcceptLogReply);
+
+}
+
+message NodeId {
+  string id = 1;
+}
+
+message Ballot {
+  int64 number = 1;
+  NodeId proposer = 2;
+}
+
+message Sequence {
+  int64 value = 1;
+}
+
+message Transfer {
+  string from = 1;
+  string to = 2;
+  int64 amount = 3;
+}
+
+message ClientRequestValue {
+  oneof op {
+    Transfer transfer = 1;
+    bool noop = 2;
+  }
+}
+
+message ClientRequest {
+  string clientId = 1;
+  int64 timestamp = 2;
+  ClientRequestValue value = 3;
+}
+
+message AcceptEntry {
+  Ballot ballot = 1;
+  Sequence sequence = 2;
+  ClientRequest request = 3;
+}
+
+
+
+message PrepareRequest {
+  NodeId from = 1;
+  Ballot ballot = 2;
+}
+
+message PromiseReply {
+  NodeId from = 1;
+  Ballot ballot = 2;
+  repeated AcceptEntry accepted = 3;
+
+  bool timer_expired = 4;
+}
+
+
+
+message AcceptRequest {
+  NodeId from = 1;
+  AcceptEntry entry = 2;
+}
+
+message AcceptedReply {
+  NodeId from = 1;
+  AcceptEntry entry = 2;
+  bool ok = 3;
+}
+
+
+message CommitRequest {
+  NodeId from = 1;
+  AcceptEntry entry = 2;
+}
+
+message CommitReply {
+  NodeId from = 1;
+  int64 committedSeq = 2;
+}
+
+
+
+message HeartbeatRequest {
+  NodeId from = 1;
+  Ballot ballot = 2;
+  int64 lastCommitted = 3;
+}
+
+message HeartbeatReply {
+  NodeId from = 1;
+  Ballot ballot = 2;
+  int64 lastCommitted = 3;
+}
+
+
+
+message MergedAcceptLog {
+  repeated AcceptEntry entries = 1;
+}
+
+message NewViewRequest {
+  NodeId from = 1;
+  Ballot ballot = 2;
+
+  MergedAcceptLog mergedLog = 3 [deprecated = true];
+
+  repeated AcceptEntry entries = 4;
+}
+
+message NewViewReply {
+  NodeId from = 1;
+  Ballot ballot = 2;
+  bool ok = 3;
+  int32 acceptedCount = 4;
+}
+
+message AcceptLog {
+  repeated AcceptEntry entries = 1;
+}
+
+
+message SyncRequest {
+  NodeId from = 1;
+  int64 fromSeq = 2;
+}
+
+message SyncReply {
+  repeated AcceptEntry committed = 1;
+  int64 leader_last_committed = 2;
+}
+
+
+message AcceptLogRequest {
+  NodeId from = 1;
+}
+
+message AcceptLogReply {
+  NodeId from = 1;
+  repeated AcceptEntry entries = 2;
+}

@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: paxos
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/paxos_node_${NODE_ID:9091}
+    username: springstudent
+    password: springstudent
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+        cache.use_second_level_cache: false
+        cache.use_query_cache: false
+
+server:
+  port: ${SERVER_PORT:8081}
+
+grpc:
+  server:
+    port: ${GRPC_PORT:9091}
+  client:
+    peer1:
+      address: static://localhost:9091
+      negotiationType: plaintext
+    peer2:
+      address: static://localhost:9092
+      negotiationType: plaintext
+    peer3:
+      address: static://localhost:9093
+      negotiationType: plaintext
+    peer4:
+      address: static://localhost:9094
+      negotiationType: plaintext
+    peer5:
+      address: static://localhost:9095
+      negotiationType: plaintext
+
+paxos:
+  self: localhost:${GRPC_PORT:9091}
+  nodes: localhost:9091,localhost:9092,localhost:9093,localhost:9094,localhost:9095
+  prepareThrottleMillis: 600
+  accept:
+    rpcTimeoutMillis: 1000
+    maxAttempts: 4
+    baseBackoffMillis: 150
+    jitterMillis: 150
+  commit:
+    fanoutRetries: 0
+  heartbeat:
+    scheduler:
+      enabled: true
+    ms: 400
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: scheduledtasks
